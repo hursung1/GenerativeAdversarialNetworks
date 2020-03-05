@@ -3,6 +3,38 @@ import torchvision
 import numpy as np
 
 
+class Generator_FC(torch.nn.Module):
+    """
+    Fully-Connected Generator
+    """
+    def __init__(self, input_node_size, hidden_node_size=256, output_node_size=28*28):
+        super(Generator_FC, self).__init__()
+        self.network = torch.nn.Sequential(
+            
+            torch.nn.Linear(input_node_size, hidden_node_size),
+            torch.nn.LeakyReLU(0.2),
+            
+            torch.nn.Linear(hidden_node_size, hidden_node_size),
+            torch.nn.BatchNorm1d(hidden_node_size, 0.8),
+            torch.nn.LeakyReLU(0.2),
+            
+            torch.nn.Linear(hidden_node_size, hidden_node_size),
+            torch.nn.BatchNorm1d(hidden_node_size, 0.8),
+            torch.nn.LeakyReLU(0.2),
+            
+            torch.nn.Linear(hidden_node_size, hidden_node_size),
+            torch.nn.BatchNorm1d(hidden_node_size, 0.8),
+            torch.nn.LeakyReLU(0.2),
+            
+            torch.nn.Linear(hidden_node_size, output_node_size),
+            torch.nn.Tanh()
+            
+        )
+        
+    def forward(self, x):
+        return self.network(x).view((x.shape[0], 1, 28, 28))
+
+
 class Generator(torch.nn.Module):
     """
     Generator Class for GAN
@@ -46,6 +78,30 @@ class Generator(torch.nn.Module):
         
     def forward(self, x):
         return self.network(x.view(-1, self.num_noise, 1, 1))
+
+
+class Discriminator_FC(torch.nn.Module):
+    """
+    Fully-Connected Discriminator
+    """
+    def __init__(self, input_node_size=28*28, hidden_node_size=256, output_node_size=1):
+        super(Discriminator_FC, self).__init__()
+        
+        self.network = torch.nn.Sequential(
+            torch.nn.Linear(input_node_size, hidden_node_size),
+            torch.nn.LeakyReLU(0.2, inplace=True),
+            
+            torch.nn.Linear(hidden_node_size, hidden_node_size),
+            torch.nn.LeakyReLU(0.2, inplace=True),
+            
+            torch.nn.Linear(hidden_node_size, output_node_size),
+            torch.nn.Sigmoid()
+        )
+
+
+    def forward(self, x):
+        _x = x.view(x.shape[0], -1)
+        return self.network(_x).view(-1, 1)
 
 
 class Discriminator(torch.nn.Module):

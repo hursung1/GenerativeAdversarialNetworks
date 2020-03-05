@@ -52,7 +52,7 @@ def imsave(img, epoch, path='imgs'):
         os.mkdir(path)
         
     fig = torchvision.utils.make_grid(img.cpu().detach()).numpy()[0]
-    scipy.misc.imsave(path+'/%d.png'%(epoch+1), fig)
+    scipy.misc.imsave(path+'/%03d.png'%(epoch+1), fig)
     
     
 def imshow(img):
@@ -74,14 +74,20 @@ def imshow_grid(img):
     plt.show()
     
     
-def sample_noise(batch_size, N_noise):
+def sample_noise(batch_size, num_noise, option='uniform'):
     """
     Returns 
     """
     if torch.cuda.is_available():
-        return torch.randn(batch_size, N_noise).cuda()
+        if option == 'uniform':
+            return torch.randn(batch_size, num_noise).cuda()
+        elif option == 'normal':
+            return torch.rand(batch_size, num_noise).cuda()
     else:
-        return torch.randn(batch_size, N_noise)
+        if option == 'uniform':
+            return torch.randn(batch_size, num_noise)
+        elif option == 'normal':
+            return torch.rand(batch_size, num_noise)
     
 
 def init_params(model):
@@ -93,7 +99,6 @@ def init_params(model):
 
     
 def gan_evaluate(**kwargs):
-#def gan_evaluate(cur_task, gen, disc, TestDataLoaders):
     batch_size = kwargs['batch_size']
     num_noise = kwargs['num_noise']
     cur_task = kwargs['cur_task']
