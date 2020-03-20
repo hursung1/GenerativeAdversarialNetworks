@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pyfiles.lib as lib
 import pyfiles.models as models
 
-
+data_shape = (1, 28, 28)
 num_noise = batch_size = 64
 epochs = 200
 ld = 10
@@ -27,11 +27,17 @@ MNISTTestDataset = torchvision.datasets.MNIST(root='../data',
                                                download=True,
                                                transform=transform)
 
-TrainDataLoader = torch.utils.data.DataLoader(MNISTTrainDataset, batch_size=batch_size, shuffle=True)
-TestDataLoader = torch.utils.data.DataLoader(MNISTTestDataset, batch_size=batch_size, shuffle=False)
+TrainDataLoader = torch.utils.data.DataLoader(MNISTTrainDataset, 
+                                            batch_size=batch_size, 
+                                            shuffle=True,
+                                            num_workers=2)
+TestDataLoader = torch.utils.data.DataLoader(MNISTTestDataset, 
+                                            batch_size=batch_size, 
+                                            shuffle=False,
+                                            num_workers=2)
 
-gen = models.Generator_FC(num_noise)
-disc = models.Discriminator_FC(28*28)
+gen = models.Generator_Conv(input_node_size=num_noise, output_shape=data_shape)
+disc = models.Discriminator_Conv(input_shape=data_shape)
 
 if torch.cuda.is_available():
     gen = gen.cuda()
@@ -48,7 +54,8 @@ for epoch in range(epochs):
     disc.train()
 
     for i, (x, _) in enumerate(TrainDataLoader):
-        x = x.view(-1, 28*28)
+        #x = lib.tensor_normalize(x.view(-1, 28*28))
+        #x = x.view(-1, 28*28)
         num_data = x.shape[0]
         noise = lib.sample_noise(num_data, num_noise)
 
@@ -63,7 +70,7 @@ for epoch in range(epochs):
 
         ## Regularization Term
         eps = torch.rand(1).item()
-        x_hat = (x.detach().clone() * eps + x_g.detach().clone().view(x_g.shape[0], -1) * (1 - eps)).requires_grad_(True)
+        x_hat = (x.detach().clone() * eps + x_g.detach().clone() * (1 - eps)).requires_grad_(True)
 
         loss_xhat = disc(x_hat)
         fake = torch.ones(loss_xhat.shape[0], 1).requires_grad_(False)
@@ -80,13 +87,7 @@ for epoch in range(epochs):
         )[0]
         gradients = gradients.view(gradients.shape[0], -1)
         gp = ((gradients.norm(2, dim=1) - 1) ** 2).mean() * ld
-        '''
-        loss_d_xhat.backward()
-        grad_x_hat = x_hat.grad.data.detach()
-        reg = ((grad_x_hat ** 2).sum().sqrt() - 1) ** 2 * ld
-
-        torch.autograd.grad()
-        '''
+        
         p_real = disc(x)
         p_fake = disc(x_g.detach())
 
@@ -106,10 +107,11 @@ for epoch in range(epochs):
 
     if epoch % 10 == 9:
         gen.eval()
-        noise = lib.sample_noise(24, num_noise)
+        noise = lib.sample_noise(64, num_noise)
         if torch.cuda.is_available():
             noise = noise.cuda()
 
         gen_img = gen(noise)
+        #print(gen_img[0])
         #lib.imshow_grid(gen_img)
         lib.imsave(gen_img, epoch)

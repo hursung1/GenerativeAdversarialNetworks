@@ -147,3 +147,24 @@ def solver_evaluate(cur_task, gen, solver, ratio, TestDataLoaders):
                     solver_loss += celoss(output, label) * (1 - ratio)
 
     return solver_loss
+
+
+def tensor_normalize(tensor):
+    """
+    Normalize tensor to [-1, 1]
+    """
+    _tensor = tensor.detach().clone()
+    _tensor_each_sum = _tensor.sum(dim=1)
+    _tensor /= _tensor_each_sum.unsqueeze(1)
+
+    _tensor[torch.isnan(_tensor)] = 0.0
+    _tensor = 2*_tensor - 1
+    return _tensor
+
+
+def ImageTensor(tensor):
+    """
+    Restore normalized tensor
+    """
+    _tensor = (tensor + 1) / 2
+    return _tensor
