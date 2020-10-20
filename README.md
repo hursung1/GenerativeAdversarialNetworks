@@ -5,4 +5,4 @@ Implementation of GANs
 * WGAN
 * WGAN_GP
 
-Specifically referenced code from here: https://github.com/eriklindernoren/PyTorch-GAN
+Refered to code from here: https://github.com/eriklindernoren/PyTorch-GAN
